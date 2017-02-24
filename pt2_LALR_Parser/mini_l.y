@@ -1,28 +1,23 @@
 %{
-#include <iostream>
-#include <stdlib.h>
-#include <string.h>
+#include "heading.h"
 int yyerror (char* s);
-int yylex (void)
+int yylex (void);
 %}
 
 %union{
-int 	int_val;
-string*	op_val;
-string*	keyw;
-string* rel_op;
-string* identifier_str;
+int val;
+char* identifier_str;
 }
-
 %start	prog_start
 
-%token	FUNCTION IDENTIFIERS BEGINPARAMS ENDPARAMS BEGINLOCALS ENDLOCALS BEGINBODY ENDBODY INTEGER ARRAY OF IF THEN ENDIF ELSE WHILE DO BEGINLOOP ENDLOOP CONTINUE READ WRITE TRUE FALSE
+%token	FUNCTION BEGINPARAMS ENDPARAMS BEGINLOCALS ENDLOCALS BEGINBODY ENDBODY INTEGER ARRAY OF IF THEN ENDIF ELSE WHILE DO BEGINLOOP ENDLOOP CONTINUE READ WRITE TRUE FALSE SEMICOLON COLON COMMA LPAREN RPAREN LSQUARE RSQUARE ASSIGN RETURN
+%token NUMBERS
+%token IDENTIFIERS
 %left MULT DIV MOD ADD SUB 
 %left LT LTE GT GTE EQ NEQ
 %right NOT
 %left AND OR
 %right ASSIGN
-%type prog_start functions function declarations declaration id assign statements statement aa bb cc dd ee ii ff gg hh boolean_expr relation_exprr relation_expr rexpr comp expression expradd mul_expr multi_term term posterm term_iden term_ex var  
 
 %%
 
@@ -44,16 +39,16 @@ declarations:	/*empty*/ {cout<<"declarations->epsilon\n"}
 declaration:	id COLON assign {cout<<"id COLON assign"<<endl;}
 		;
 
-id:		IDENTIFIER {cout<<"id -> "<<identifier_str<<endl;}
-		| IDENTIFIER COMMMA id {cout<<" id -> "<<identifier_str<<" COMMA id" << endl;}
+id:		IDENTIFIERS {cout<<"id -> "<<identifier_str<<endl;}
+		| IDENTIFIERS COMMA id {cout<<" id -> "<<identifier_str<<" COMMA id" << endl;}
 		;
 
 assign:		INTEGER {cout<<"assign -> INTEGER"<<endl;}
-		| ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER {cout<<"assign -> ARRAY L_SQUARE_BRACKET "<<int_val<<" R_SQUARE_BRACKET OF INTEGER"<<endl;}
+		| ARRAY LSQUARE NUMBERS RSQUARE OF INTEGER {cout<<"assign -> ARRAY LSQUARE "<<val<<" RSQUARE OF INTEGER"<<endl;}
 		;
 
 statements:	statement SEMICOLON statements {cout<<"statements -> statement SEMICOLON statements"<<endl;}
-		| statment SEMICOLON {cout<<"statements -> statement SEMICOLON"<<endl;}
+		| statement SEMICOLON {cout<<"statements -> statement SEMICOLON"<<endl;}
 		;
 
 statement:	aa{cout<<"statement -> aa"<<endl;}
@@ -69,14 +64,14 @@ statement:	aa{cout<<"statement -> aa"<<endl;}
 aa:		var ASSIGN expression{cout<<"aa -> var ASSIGN expression"<<endl;}
 		;
 
-bb:		IF boolean-exp THEN statements ENDIF {cout<<"bb -> IF boolean-exp THEN statements ENDIF"<<endl;}
-		| IF boolean-exp THEN statements ELSE statements ENDIF {cout<<"IF boolean-exp THEN statements ELSE statements ENDIF"<<endl;}
+bb:		IF boolean_expr THEN statements ENDIF {cout<<"bb -> IF boolean_expr THEN statements ENDIF"<<endl;}
+		| IF boolean_expr THEN statements ELSE statements ENDIF {cout<<"IF boolean_expr THEN statements ELSE statements ENDIF"<<endl;}
 		;
 
-cc:		WHILE boolean-exp BEGINLOOP statements ENDLOOP {cout<<"cc  -> WHILE boolean-exp BEGINLOOP statements ENDLOOP"<<endl;}
+cc:		WHILE boolean_expr BEGINLOOP statements ENDLOOP {cout<<"cc  -> WHILE boolean_expr BEGINLOOP statements ENDLOOP"<<endl;}
 		;
 
-dd:		DO BEGINLOOP statements ENDLOOP WHILE boolean-exp {cout<<"DO BEGINLOOP statements ENDLOOP WHILE boolean-exp"<<endl;}
+dd:		DO BEGINLOOP statements ENDLOOP WHILE boolean_expr {cout<<"DO BEGINLOOP statements ENDLOOP WHILE boolean_expr"<<endl;}
 		;
 
 ee:		READ var ii {cout<<"ee- > READ var ii"<<endl;}
@@ -110,7 +105,7 @@ relation_expr:	rexpr{ cout<< "relation_expr -> rexpr"<<endl;}
 rexpr:		expression comp expression {cout<< "rexpr -> expression comp expression" <<endl;}
 		| TRUE {cout<< "rexpr -> TRUE" <<endl;}
 		| FALSE {cout<< "rexpr -> FALSE" <<endl;}
-		| L_PAREN boolean_expr R_PAREN {cout<< "rexpr -> LPAREN boolean_expr R_PAREN" <<endl;}
+		| LPAREN boolean_expr RPAREN {cout<< "rexpr -> LPAREN boolean_expr RPAREN" <<endl;}
 		;
 
 comp:		EQ {cout<< "comp -> EQ" <<endl;}
@@ -140,25 +135,39 @@ multi_term:	/*empty*/ {cout<< "multi_term -> epsilon"<<endl;}
 
 term:           posterm {cout<< "term -> posterm" <<endl;}
                 | SUB posterm {cout<< "term -> SUB posterm"  <<endl;}
-                | IDENTIFIER term_iden {cout<< "term -> "<<identifier_str <<" term_iden"<<endl;}
+                | IDENTIFIERS term_iden {cout<< "term -> "<<identifier_str <<" term_iden"<<endl;}
                 ;
 
 posterm:        var {cout<< "posterm -> var" <<endl;}
-                | NUMBER {cout<< "posterm -> "<<int_val <<endl;}
-                | L_PAREN expression R_PAREN {cout<< "posterm -> L_PAREN expression R_PAREN" <<endl;}
+                | NUMBERS {cout<< "posterm -> "<<val <<endl;}
+                | LPAREN expression RPAREN {cout<< "posterm -> LPAREN expression RPAREN" <<endl;}
                 ;
 
-term_iden:      L_PAREN term_ex R_PAREN {cout<< "term_iden -> L_PAREN term_ex R_PAREN" <<endl;}
-                | L_PAREN R_PAREN {cout<< "term_iden -> L_PAREN R_PAREN" <<endl;}
+term_iden:      LPAREN term_ex RPAREN {cout<< "term_iden -> LPAREN term_ex RPAREN" <<endl;}
+                | LPAREN RPAREN {cout<< "term_iden -> LPAREN RPAREN" <<endl;}
                 ;
 
 term_ex:        expression {cout<< "term_ex -> expression" <<endl;}
                 | expression COMMA term_ex {cout<< "term_ex -> expression COMMA term_ex" <<endl;}
                 ;
 
-var:            IDENTIFIER {cout<<"var -> "<<identifier_str<<endl;}
-                | IDENTIFIER L_SQUARE_BRACKET expression R_SQUARE_BRACKET {cout<<"var -> "<<identifier_str<<" L_SQUARE_BRACKET expression R_SQUARE_BRACKET"<<endl;} 
+var:            IDENTIFIERS {cout<<"var -> "<<identifier_str<<endl;}
+                | IDENTIFIERS LSQUARE expression RSQUARE {cout<<"var -> "<<identifier_str<<" LSQUARE expression RSQUARE"<<endl;} 
                 ;
 %%
 
+int yyerror(string s)
+{
+  extern int yylineno;	// defined and maintained in lex.c
+  extern char *yytext;	// defined and maintained in lex.c
+  
+  cerr << "ERROR: " << s << " at symbol \"" << yytext;
+  cerr << "\" on line " << yylineno << endl;
+  exit(1);
+}
+
+int yyerror(char *s)
+{
+  return yyerror(string(s));
+}
 
