@@ -72,12 +72,12 @@ false		{yylval.keyw=new std::string("FALSE\n");return FALSE;column=column+strlen
 
 
 		/*Identifiers and Numbers*/
-[0-9]+					{yylval.int_val=atoi(yytext);column=column+strlen(yytext);}
+[0-9]+					{yylval.int_val=atoi(yytext);return NUMBERS;column=column+strlen(yytext);}
 
 [0-9|_][a-zA-Z0-9|_]*[a-zA-Z0-9|_]      {printf("Error at line %d, column %d: Identifier \"%s\" must begin with a letter\n",row,column,yytext);column=column+strlen(yytext);exit(0);} 
 [a-zA-Z][a-zA-Z0-9|_]*[_]               {printf("Error at line %d, column %d: Identifier \"%s\" cannot end with an underscore\n",row,column,yytext);column=column+strlen(yytext);exit(0);} 
-[a-zA-Z][a-zA-Z0-9|_]*[a-zA-Z0-9]	{string s ="IDENT"+ yytext;yylval.indentifier_str=new std::string(s);column=column+strlen(yytext);/*Multi letter Identifier*/} 
-[a-zA-Z][a-zA-Z0-9]*			{string s ="IDENT"+ yytext;yylval.indentifier_str=new std::string(s);column=column+strlen(yytext);/*Single Letter Identifier and Multi letter Identifier with underscores */}
+[a-zA-Z][a-zA-Z0-9|_]*[a-zA-Z0-9]	{string s ="IDENT"+ yytext;yylval.indentifier_str=new std::string(s);return IDENTIFIERS;column=column+strlen(yytext);/*Multi letter Identifier*/} 
+[a-zA-Z][a-zA-Z0-9]*			{string s ="IDENT"+ yytext;yylval.indentifier_str=new std::string(s);return IDENTIFIERS;column=column+strlen(yytext);/*Single Letter Identifier and Multi letter Identifier with underscores */}
 
 
 		/*Spaces and Tabs*/
