@@ -14,36 +14,42 @@ string* rel_op;
 string* identifier_str;
 }
 
-%start	functions
+%start	prog-start
 
-%token	FUNCTION BEGINPARAMS ENDPARAMS BEGINLOCALS ENDLOCALS BEGINBODY ENDBODY INTEGER ARRAY OF IF THEN ENDIF ELSE WHILE DO BEGINLOOP ENDLOOP CONTINUE READ WRITE TRUE FALSE
+%token	FUNCTION IDENTIFIERS BEGINPARAMS ENDPARAMS BEGINLOCALS ENDLOCALS BEGINBODY ENDBODY INTEGER ARRAY OF IF THEN ENDIF ELSE WHILE DO BEGINLOOP ENDLOOP CONTINUE READ WRITE TRUE FALSE
 %left MULT DIV MOD ADD SUB 
 %left LT LTE GT GTE EQ NEQ
 %right NOT
 %left AND OR
 %right ASSIGN
+%type prog-start functions function declarations declaration statements 
 
 %%
-prog		/*empty*/
-		| function prog
+
+prog-start:	functions { cout<<"prog-start->functions"; }
+		;	
+	
+functions:	/*empty*/{cout<<"function->epsilon"<<endl;}
+		| function functions {cout<<"functions -> function functions"<<endl;}
 		;
 
-function	FUNCTION IDENTIFIER SEMICOLON BEGINPARAMS dec ENDPARAMS BEGINLOCALS dec ENDLOCALS BEGINBODY statements ENDBODY
+function:	FUNCTION IDENT identifier_str SEMICOLON BEGINPARAMS dec ENDPARAMS BEGINLOCALS dec ENDLOCALS BEGINBODY statements ENDBODY {cout<<"FUNCTION "<<identifier_str<<" SEMICOLON BEGIN_PARAMS declarations END_PARAMS BEGIN_LOCALS declarations END_LOCALS BEGIN_BODY statements END_BODY"<<endl;}
 		;
 
-dec		/*empty*/
-		| declaration SEMICOLON dec
+
+declarations:	/*empty*/ {cout<<"declarations->epsilon\n"}
+		| declaration SEMICOLON declarations {cout<<"declarations -> declaration SEMICOLON declarations"<<endl;}
 		;
 
-declaration	id COLON assign
+declaration	id COLON assign {cout<<"id COLON assign"<<endl;}
 		;
 
-id		IDENTIFIER
-		| IDENTIFIER COMMMA id
+id		IDENTIFIER {cout<<"id -> "<<identifier_str<<endl;}
+		| IDENTIFIER COMMMA id {cout<<" id -> "<<identifier_str<<" COMMA id" << endl;}
 		;
 
-assign		INTEGER
-		| ARRAY L_SQUARE_BRACKER NUMBER R_SQUARE_BRACKET OF INTEGER
+assign		INTEGER {cout<<"assign -> INTEGER"<<endl;}
+		| ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER {cout<<"assign -> ARRAY L_SQUARE_BRACKET "<<int_val<<" R_SQUARE_BRACKET OF INTEGER"<<endl;}
 		;
 
 statements	aa
