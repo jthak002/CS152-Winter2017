@@ -22,7 +22,7 @@ string* identifier_str;
 %right NOT
 %left AND OR
 %right ASSIGN
-%type prog_start functions function declarations declaration statements 
+%type prog_start functions function declarations declaration id assign statements statement aa bb cc dd ee ii ff gg hh boolean_expr relation_exprr relation_expr rexpr comp expression expradd mul_expr multi_term term posterm term_iden term_ex var  
 
 %%
 
@@ -33,7 +33,7 @@ functions:	/*empty*/{cout<<"function->epsilon"<<endl;}
 		| function functions {cout<<"functions -> function functions"<<endl;}
 		;
 
-function:	FUNCTION IDENT identifier_str SEMICOLON BEGINPARAMS dec ENDPARAMS BEGINLOCALS dec ENDLOCALS BEGINBODY statements ENDBODY {cout<<"FUNCTION "<<identifier_str<<" SEMICOLON BEGIN_PARAMS declarations END_PARAMS BEGIN_LOCALS declarations END_LOCALS BEGIN_BODY statements END_BODY"<<endl;}
+function:	FUNCTION IDENTIFIERS SEMICOLON BEGINPARAMS declarations ENDPARAMS BEGINLOCALS declarations ENDLOCALS BEGINBODY statements ENDBODY {cout<<"FUNCTION "<<identifier_str<<" SEMICOLON BEGIN_PARAMS declarations END_PARAMS BEGIN_LOCALS declarations END_LOCALS BEGIN_BODY statements END_BODY"<<endl;}
 		;
 
 
