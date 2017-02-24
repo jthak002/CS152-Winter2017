@@ -14,7 +14,7 @@ string* rel_op;
 string* identifier_str;
 }
 
-%start	prog-start
+%start	prog_start
 
 %token	FUNCTION IDENTIFIERS BEGINPARAMS ENDPARAMS BEGINLOCALS ENDLOCALS BEGINBODY ENDBODY INTEGER ARRAY OF IF THEN ENDIF ELSE WHILE DO BEGINLOOP ENDLOOP CONTINUE READ WRITE TRUE FALSE
 %left MULT DIV MOD ADD SUB 
@@ -22,11 +22,11 @@ string* identifier_str;
 %right NOT
 %left AND OR
 %right ASSIGN
-%type prog-start functions function declarations declaration statements 
+%type prog_start functions function declarations declaration statements 
 
 %%
 
-prog-start:	functions { cout<<"prog-start->functions"; }
+prog_start:	functions { cout<<"prog_start->functions"; }
 		;	
 	
 functions:	/*empty*/{cout<<"function->epsilon"<<endl;}
@@ -95,22 +95,22 @@ gg:		CONTINUE {cout<<"gg -> CONTINUE"<<endl;}
 hh:		RETURN expression {cout<<"hh -> RETURN expression"<<endl;}
 		;
 
-boolean-expr:	relation-exprr {cout<<"boolean-expr -> relation-exprr"<<endl;}
-		| boolean-expr OR relation-exprr {cout<<"boolean-expr -> boolean-expr OR relation-exprr"<<endl;}
+boolean_expr:	relation_exprr {cout<<"boolean_expr -> relation_exprr"<<endl;}
+		| boolean_expr OR relation_exprr {cout<<"boolean_expr -> boolean_expr OR relation_exprr"<<endl;}
 		;
 
-relation-exprr:	relation-expr {cout<< "relation-exprr -> relation-expr"<<endl;} 
-		| relation-exprr AND relation-expr {cout<<"relation-exprr -> relation-exprr AND relation-expr"<<endl;}
+relation_exprr:	relation_expr {cout<< "relation_exprr -> relation_expr"<<endl;} 
+		| relation_exprr AND relation_expr {cout<<"relation_exprr -> relation_exprr AND relation_expr"<<endl;}
 		;
 
-relation-expr:	rexpr{ cout<< "relation-expr -> rexpr"<<endl;}
-		| NOT rexpr { cout<<"relation-expr -> NOT rexpr"<<endl;}
+relation_expr:	rexpr{ cout<< "relation_expr -> rexpr"<<endl;}
+		| NOT rexpr { cout<<"relation_expr -> NOT rexpr"<<endl;}
 		;
 
 rexpr:		expression comp expression {cout<< "rexpr -> expression comp expression" <<endl;}
 		| TRUE {cout<< "rexpr -> TRUE" <<endl;}
 		| FALSE {cout<< "rexpr -> FALSE" <<endl;}
-		| L_PAREN boolean-expr R_PAREN {cout<< "rexpr -> LPAREN boolean-expr R_PAREN" <<endl;}
+		| L_PAREN boolean_expr R_PAREN {cout<< "rexpr -> LPAREN boolean_expr R_PAREN" <<endl;}
 		;
 
 comp:		EQ {cout<< "comp -> EQ" <<endl;}
@@ -121,26 +121,26 @@ comp:		EQ {cout<< "comp -> EQ" <<endl;}
 		| GTE {cout<< "comp -> GTE" <<endl;}
 		;
 
-expression:	mul-expr expradd {cout<< "expression -> mult-expr expradd" <<endl;}
+expression:	mul_expr expradd {cout<< "expression -> mult-expr expradd" <<endl;}
 		;
 
 expradd:	/*empty*/ {cout<< "expradd -> episolon" <<endl;}
-		| ADD mul-expr expradd {cout<< "expradd -> ADD mul-expr expradd" << endl;}
-		| MULT mul-expr expradd {cout<< "expradd -> MULT mul-expr expradd" << endl;}
+		| ADD mul_expr expradd {cout<< "expradd -> ADD mul_expr expradd" << endl;}
+		| MULT mul_expr expradd {cout<< "expradd -> MULT mul_expr expradd" << endl;}
 		;
 
-mul-expr:	term multi-term {cout<< "mul-expr -> term multi-term" <<endl;}
+mul_expr:	term multi_term {cout<< "mul_expr -> term multi_term" <<endl;}
 		;
 
-multi-term:	/*empty*/ {cout<< "multi-term -> epsilon"<<endl;}
-		| MULT term multi-term {cout<< "multi-term -> MULT term multi-term" <<endl;} 
-		| DIV term multi-term {cout<< "multi-term -> DIV term multi-term" <<endl;}
-		| MOD term multi-term {cout<< "multi-term -> MOD term multi-term" <<endl;}
+multi_term:	/*empty*/ {cout<< "multi_term -> epsilon"<<endl;}
+		| MULT term multi_term {cout<< "multi_term -> MULT term multi_term" <<endl;} 
+		| DIV term multi_term {cout<< "multi_term -> DIV term multi_term" <<endl;}
+		| MOD term multi_term {cout<< "multi_term -> MOD term multi_term" <<endl;}
 		;
 
 term:           posterm {cout<< "term -> posterm" <<endl;}
                 | SUB posterm {cout<< "term -> SUB posterm"  <<endl;}
-                | IDENTIFIER term-iden {cout<< "term -> "<<identifier_str <<" term-iden"<<endl;}
+                | IDENTIFIER term_iden {cout<< "term -> "<<identifier_str <<" term_iden"<<endl;}
                 ;
 
 posterm:        var {cout<< "posterm -> var" <<endl;}
@@ -148,12 +148,12 @@ posterm:        var {cout<< "posterm -> var" <<endl;}
                 | L_PAREN expression R_PAREN {cout<< "posterm -> L_PAREN expression R_PAREN" <<endl;}
                 ;
 
-term-iden:      L_PAREN term-ex R_PAREN {cout<< "term-iden -> L_PAREN term-ex R_PAREN" <<endl;}
-                | L_PAREN R_PAREN {cout<< "term-iden -> L_PAREN R_PAREN" <<endl;}
+term_iden:      L_PAREN term_ex R_PAREN {cout<< "term_iden -> L_PAREN term_ex R_PAREN" <<endl;}
+                | L_PAREN R_PAREN {cout<< "term_iden -> L_PAREN R_PAREN" <<endl;}
                 ;
 
-term-ex:        expression {cout<< "term-ex -> expression" <<endl;}
-                | expression COMMA term-ex {cout<< "term-ex -> expression COMMA term-ex" <<endl;}
+term_ex:        expression {cout<< "term_ex -> expression" <<endl;}
+                | expression COMMA term_ex {cout<< "term_ex -> expression COMMA term_ex" <<endl;}
                 ;
 
 var:            IDENTIFIER {cout<<"var -> "<<identifier_str<<endl;}
