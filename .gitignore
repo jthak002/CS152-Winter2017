@@ -1,0 +1,27 @@
+#Compiled Source#
+#################
+*.o
+*.out
+*.class
+*.exe
+#Packages#
+################
+*.tgz
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+#Repo specific packages#
+########################
+bison.*
+lex.c
+lex.yy.c
+mini_l
+mini_l.output
+mini_l.tab.c
+mini_l.tab.h
+tok.h
