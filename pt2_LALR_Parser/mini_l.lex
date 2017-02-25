@@ -37,6 +37,7 @@ or		{return OR;column=column+strlen(yytext);}
 not		{return NOT;column=column+strlen(yytext);}
 true		{return TRUE;column=column+strlen(yytext);}
 false		{return FALSE;column=column+strlen(yytext);}
+return		{return RETURN;column=column+strlen(yytext);}
 		/*END of Reserved keywords*/
 
 		/*Operands*/
@@ -73,18 +74,18 @@ false		{return FALSE;column=column+strlen(yytext);}
 
 
 		/*Identifiers and Numbers*/
-[0-9]+					{yylval.int_val=atoi(yytext);return NUMBERS;column=column+strlen(yytext);}
+[0-9]+					{yylval.val=atoi(yytext);return NUMBERS;column=column+strlen(yytext);}
 
 [0-9|_][a-zA-Z0-9|_]*[a-zA-Z0-9|_]      {printf("Error at line %d, column %d: Identifier \"%s\" must begin with a letter\n",row,column,yytext);column=column+strlen(yytext);exit(0);} 
 [a-zA-Z][a-zA-Z0-9|_]*[_]               {printf("Error at line %d, column %d: Identifier \"%s\" cannot end with an underscore\n",row,column,yytext);column=column+strlen(yytext);exit(0);} 
-[a-zA-Z][a-zA-Z0-9|_]*[a-zA-Z0-9]	{string s ="IDENT"+ yytext;yylval.indentifier_str=new std::string(s);return IDENTIFIERS;column=column+strlen(yytext);/*Multi letter Identifier*/} 
-[a-zA-Z][a-zA-Z0-9]*			{string s ="IDENT"+ yytext;yylval.indentifier_str=new std::string(s);return IDENTIFIERS;column=column+strlen(yytext);/*Single Letter Identifier and Multi letter Identifier with underscores */}
+[a-zA-Z][a-zA-Z0-9|_]*[a-zA-Z0-9]	{yylval.op_val=new std::string(yytext);return IDENTIFIERS;column=column+strlen(yytext);/*Multi letter Identifier*/} 
+[a-zA-Z][a-zA-Z0-9]*			{yylval.op_val=new std::string(yytext);return IDENTIFIERS;column=column+strlen(yytext);/*Single Letter Identifier and Multi letter Identifier with underscores */}
 
 
 		/*Spaces and Tabs*/
 [ ]         	column=column+1; 
 [\t]		column=column+1;
-[\n]		{row=row+1;column=1;}
+[\n]		{yylineno++;row=row+1;column=1;}
 
 		/*Unidentified Characters*/
 .		{printf("Error at line %d, column %d :unrecognized symbol \"%s\"\n",row,column,yytext);exit(0);}

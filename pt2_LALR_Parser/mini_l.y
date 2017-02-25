@@ -6,13 +6,13 @@ int yylex (void);
 
 %union{
 int val;
-char* identifier_str;
+string* op_val;
 }
 %start	prog_start
 
 %token	FUNCTION BEGINPARAMS ENDPARAMS BEGINLOCALS ENDLOCALS BEGINBODY ENDBODY INTEGER ARRAY OF IF THEN ENDIF ELSE WHILE DO BEGINLOOP ENDLOOP CONTINUE READ WRITE TRUE FALSE SEMICOLON COLON COMMA LPAREN RPAREN LSQUARE RSQUARE ASSIGN RETURN
-%token NUMBERS
-%token IDENTIFIERS
+%token <val> NUMBERS
+%token <op_val> IDENTIFIERS
 %left MULT DIV MOD ADD SUB 
 %left LT LTE GT GTE EQ NEQ
 %right NOT
@@ -28,7 +28,7 @@ functions:	/*empty*/{cout<<"function->epsilon"<<endl;}
 		| function functions {cout<<"functions -> function functions"<<endl;}
 		;
 
-function:	FUNCTION IDENTIFIERS SEMICOLON BEGINPARAMS declarations ENDPARAMS BEGINLOCALS declarations ENDLOCALS BEGINBODY statements ENDBODY {cout<<"FUNCTION "<<identifier_str<<" SEMICOLON BEGIN_PARAMS declarations END_PARAMS BEGIN_LOCALS declarations END_LOCALS BEGIN_BODY statements END_BODY"<<endl;}
+function:	FUNCTION IDENTIFIERS SEMICOLON BEGINPARAMS declarations ENDPARAMS BEGINLOCALS declarations ENDLOCALS BEGINBODY statements ENDBODY {cout<<"FUNCTION IDENT "<<*($2)<<" SEMICOLON BEGIN_PARAMS declarations END_PARAMS BEGIN_LOCALS declarations END_LOCALS BEGIN_BODY statements END_BODY"<<endl;}
 		;
 
 
@@ -39,12 +39,12 @@ declarations:	/*empty*/ {cout<<"declarations->epsilon\n"}
 declaration:	id COLON assign {cout<<"id COLON assign"<<endl;}
 		;
 
-id:		IDENTIFIERS {cout<<"id -> "<<identifier_str<<endl;}
-		| IDENTIFIERS COMMA id {cout<<" id -> "<<identifier_str<<" COMMA id" << endl;}
+id:		IDENTIFIERS {cout<<"id -> IDENT "<<*($1)<<endl;}
+		| IDENTIFIERS COMMA id {cout<<" id -> IDENT "<<$1<<" COMMA id" << endl;}
 		;
 
 assign:		INTEGER {cout<<"assign -> INTEGER"<<endl;}
-		| ARRAY LSQUARE NUMBERS RSQUARE OF INTEGER {cout<<"assign -> ARRAY LSQUARE "<<val<<" RSQUARE OF INTEGER"<<endl;}
+		| ARRAY LSQUARE NUMBERS RSQUARE OF INTEGER {cout<<"assign -> ARRAY LSQUARE NUMBER "<<$3<<" RSQUARE OF INTEGER"<<endl;}
 		;
 
 statements:	statement SEMICOLON statements {cout<<"statements -> statement SEMICOLON statements"<<endl;}
@@ -119,7 +119,7 @@ comp:		EQ {cout<< "comp -> EQ" <<endl;}
 expression:	mul_expr expradd {cout<< "expression -> mult-expr expradd" <<endl;}
 		;
 
-expradd:	/*empty*/ {cout<< "expradd -> episolon" <<endl;}
+expradd:	/*empty*/ {cout<< "expradd -> epsilon" <<endl;}
 		| ADD mul_expr expradd {cout<< "expradd -> ADD mul_expr expradd" << endl;}
 		| MULT mul_expr expradd {cout<< "expradd -> MULT mul_expr expradd" << endl;}
 		;
@@ -135,11 +135,11 @@ multi_term:	/*empty*/ {cout<< "multi_term -> epsilon"<<endl;}
 
 term:           posterm {cout<< "term -> posterm" <<endl;}
                 | SUB posterm {cout<< "term -> SUB posterm"  <<endl;}
-                | IDENTIFIERS term_iden {cout<< "term -> "<<identifier_str <<" term_iden"<<endl;}
+                | IDENTIFIERS term_iden {cout<< "term -> IDENT "<<*($1)<<" term_iden"<<endl;}
                 ;
 
 posterm:        var {cout<< "posterm -> var" <<endl;}
-                | NUMBERS {cout<< "posterm -> "<<val <<endl;}
+                | NUMBERS {cout<< "posterm -> NUMBER "<<$1 <<endl;}
                 | LPAREN expression RPAREN {cout<< "posterm -> LPAREN expression RPAREN" <<endl;}
                 ;
 
@@ -151,8 +151,8 @@ term_ex:        expression {cout<< "term_ex -> expression" <<endl;}
                 | expression COMMA term_ex {cout<< "term_ex -> expression COMMA term_ex" <<endl;}
                 ;
 
-var:            IDENTIFIERS {cout<<"var -> "<<identifier_str<<endl;}
-                | IDENTIFIERS LSQUARE expression RSQUARE {cout<<"var -> "<<identifier_str<<" LSQUARE expression RSQUARE"<<endl;} 
+var:            IDENTIFIERS {cout<<"var -> IDENT "<<*($1)<<endl;}
+                | IDENTIFIERS LSQUARE expression RSQUARE {cout<<"var -> IDENT "<<*($1)<<" LSQUARE expression RSQUARE"<<endl;} 
                 ;
 %%
 
