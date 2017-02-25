@@ -121,7 +121,7 @@ expression:	mul_expr expradd {cout<< "expression -> mult-expr expradd" <<endl;}
 
 expradd:	/*empty*/ {cout<< "expradd -> epsilon" <<endl;}
 		| ADD mul_expr expradd {cout<< "expradd -> ADD mul_expr expradd" << endl;}
-		| MULT mul_expr expradd {cout<< "expradd -> MULT mul_expr expradd" << endl;}
+		| SUB mul_expr expradd {cout<< "expradd -> SUB mul_expr expradd" << endl;}
 		;
 
 mul_expr:	term multi_term {cout<< "mul_expr -> term multi_term" <<endl;}
