@@ -158,11 +158,12 @@ var:            IDENTIFIERS {cout<<"var -> IDENT "<<*($1)<<endl;}
 
 int yyerror(string s)
 {
-  extern int yylineno;	// defined and maintained in lex.c
-  extern char *yytext;	// defined and maintained in lex.c
+  extern int row, column;	// defined and maintained in lex.c
+				//to maintain the row and column
+				//of characters
+  extern char *yytext;		// defined and maintained in lex.c
   
-  cerr << "ERROR: " << s << " at symbol \"" << yytext;
-  cerr << "\" on line " << yylineno << endl;
+  cerr << "SYNTAX(PARSER) Error at line "<<row<<", column "<<column<<" : Unexpected Symbol \""<<yytext<<"\" Encountered."<<endl;
   exit(1);
 }
 

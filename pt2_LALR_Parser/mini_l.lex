@@ -76,8 +76,8 @@ return		{column=column+strlen(yytext);return RETURN;}
 		/*Identifiers and Numbers*/
 [0-9]+					{column=column+strlen(yytext);yylval.val=atoi(yytext);return NUMBERS;}
 
-[0-9|_][a-zA-Z0-9|_]*[a-zA-Z0-9|_]      {printf("Error at line %d, column %d: Identifier \"%s\" must begin with a letter\n",row,column,yytext);column=column+strlen(yytext);exit(0);}
-[a-zA-Z][a-zA-Z0-9|_]*[_]               {printf("Error at line %d, column %d: Identifier \"%s\" cannot end with an underscore\n",row,column,yytext);column=column+strlen(yytext);exit(0);}
+[0-9|_][a-zA-Z0-9|_]*[a-zA-Z0-9|_]      {printf("LEXER Error at line %d, column %d: Identifier \"%s\" must begin with a letter\n",row,column,yytext);column=column+strlen(yytext); exit(1);}
+[a-zA-Z][a-zA-Z0-9|_]*[_]               {printf("LEXER Error at line %d, column %d: Identifier \"%s\" cannot end with an underscore\n",row,column,yytext);column=column+strlen(yytext);exit(1);}
 [a-zA-Z][a-zA-Z0-9|_]*[a-zA-Z0-9]	{column=column+strlen(yytext);yylval.op_val=new std::string(yytext);return IDENTIFIERS;/*Multi letter Identifier*/}
 [a-zA-Z][a-zA-Z0-9]*			{column=column+strlen(yytext);yylval.op_val=new std::string(yytext);return IDENTIFIERS;/*Single Letter Identifier and Multi letter Identifier with underscores */}
 
@@ -88,5 +88,5 @@ return		{column=column+strlen(yytext);return RETURN;}
 [\n]		{yylineno++;row=row+1;column=1;}
 
 		/*Unidentified Characters*/
-.		{printf("Error at line %d, column %d :unrecognized symbol \"%s\"\n",row,column,yytext);exit(0);}
+.		{printf("LEXER Error at line %d, column %d :unrecognized symbol \"%s\"\n",row,column,yytext);exit(1);}
 %%
