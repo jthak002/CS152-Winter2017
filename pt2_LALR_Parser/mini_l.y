@@ -21,7 +21,7 @@ string* op_val;
 
 %%
 
-prog_start:	functions { cout<<"prog_start->functions"; }
+prog_start:	functions { cout<<"prog_start->functions"<<endl; }
 		;	
 	
 functions:	/*empty*/{cout<<"function->epsilon"<<endl;}
