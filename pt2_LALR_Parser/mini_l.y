@@ -40,7 +40,7 @@ declaration:	id COLON assign {cout<<"id COLON assign"<<endl;}
 		;
 
 id:		IDENTIFIERS {cout<<"id -> IDENT "<<*($1)<<endl;}
-		| IDENTIFIERS COMMA id {cout<<" id -> IDENT "<<$1<<" COMMA id" << endl;}
+		| IDENTIFIERS COMMA id {cout<<"id -> IDENT "<<*($1)<<" COMMA id" << endl;}
 		;
 
 assign:		INTEGER {cout<<"assign -> INTEGER"<<endl;}
