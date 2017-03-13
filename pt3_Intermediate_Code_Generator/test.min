@@ -1,0 +1,16 @@
+function main;
+beginparams
+k   :   integer;
+endparams
+
+beginlocals
+n : integer;
+a : array[1000] of integer;
+i, j : integer;
+endlocals
+
+beginbody
+    j:=i+1;
+    write j;
+    a[i]:=a[i+1];
+endbody

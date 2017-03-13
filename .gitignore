@@ -25,3 +25,8 @@ mini_l.output
 mini_l.tab.c
 mini_l.tab.h
 tok.h
+#DESKTOP CONFIG FILES#
+######################
+desktop.ini
+.DS_Store
+
