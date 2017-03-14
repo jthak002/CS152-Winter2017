@@ -5,12 +5,19 @@ endparams
 
 beginlocals
 n : integer;
-a : array[1000] of integer;
+a : integer;
 i, j : integer;
 endlocals
-
 beginbody
-    j:=i+1;
-    write j;
-    a[i]:=a[i+1];
+    n:=2;
+    a:=1;
+    write a,n;
+    if a < n then
+        a:=n;
+        if i<j then
+            a:=n;
+        endif;
+        write i,j;
+    endif;
+    write a,n;
 endbody

@@ -5,11 +5,15 @@ int yylex (void);
 vector <string> func_table; //Stores the names of functions for the function lookup table
 vector <string> sym_table;  //Stores the name of the symbols for the symbol table
 vector <string> sym_type;   //Stores the data type of the variables denoted by the symbols 
-vector <string> op;
-vector <string> stmnt_vctr;
-string temp_string; 
-int temp_var_count;
-stringstream m;
+vector <string> op;         //Stores the operands for calculations within the stack. 
+                            //Acts as both stack and queue [queue needed for read and write]
+vector <string> stmnt_vctr; //Stores the statements in machine language
+string temp_string;         //temporary variable
+int temp_var_count;         //keeps a count on the number of temporary variables used
+int label_count;            //keeps track of the next label number
+vector <vector <string> > if_label; //storing 2 labels for 
+stringstream m;             //Used for conversion from int to string --> can be cleared by
+                            //m.str("")[to clear the string buffer; m.clear()[to clear the parameters and errors
 %}
 
 %union{
@@ -52,6 +56,7 @@ function:	FUNCTION IDENTIFIERS SEMICOLON BEGINPARAMS declarations ENDPARAMS BEGI
             //STATEMENT PRINT
             for(unsigned i=0;i<stmnt_vctr.size();i++)
                 cout<<stmnt_vctr.at(i)<<endl;
+            cout<<"endfunc"<<endl;
             stmnt_vctr.clear();
             sym_table.clear();
             sym_type.clear();
@@ -106,10 +111,10 @@ statement:  aa
             ;
 aa:		IDENTIFIERS ASSIGN expression
         {
-            stmnt_vctr.push_back("= _" + *($1) + "," + op.back() );
+            stmnt_vctr.push_back("= _" + *($1) + ", " + op.back() );
             op.pop_back();
-            cout<<op.size()<<endl;
-            op.clear()  //REMOVE AFTER TESTING
+            //cout<<op.size()<<endl;    TEST
+            //op.clear()  //REMOVE AFTER TESTING
         }
         | IDENTIFIERS LSQUARE expression RSQUARE ASSIGN expression
         {
@@ -117,21 +122,67 @@ aa:		IDENTIFIERS ASSIGN expression
             op.pop_back();
             string array_expression = op.back();
             op.pop_back();
-            stmnt_vctr.push_back("[]= " + *($1)+"," + array_expression + "," + array_result_expression); 
+            stmnt_vctr.push_back("[]= _" + *($1)+", " + array_expression + ", " + array_result_expression); 
         }
         ;
 
-bb:		IF boolean_expr THEN statements ENDIF
-        {op.clear();}
-	
-		| IF boolean_expr THEN statements ELSE statements ENDIF 
-		{op.clear();}
+
+if_clause:		IF boolean_expr THEN
+        {
+            //MACHINE LANGUAGE CODE FOR IF STATEMENT
+            /* ?= test_codition_temp_variable, goto first_label
+                =:second_label
+                :first_label
+                ## Statements
+                :second_label
+            */
+            label_count++;     //Generating two discrete labels for this if statement
+            m.str("");
+            m.clear();      //clearing the stringstream buffer
+            m<<label_count;
+            string label_1 = "label_"+m.str();  //creating label1
+            label_count++;
+            m.str("");
+            m.clear();      //clearing the string stream buffer
+            m<<label_count; 
+            string label_2 = "label_"+m.str();  //creating label2
+            vector<string> temp;        //temp label vector
+            temp.push_back(label_1);    //pushing first label onto temp label vectr
+            temp.push_back(label_2);    //pushing second label onto temp vector
+            if_label.push_back(temp);   //pushing temp vector onto if label
+            stmnt_vctr.push_back("?= "+op.back()+", "+if_label.back().at(0));
+                                        //MC: evaluate if condition and goto first_label
+            op.pop_back();
+            stmnt_vctr.push_back(":= "+if_label.back().at(1));  //MC: goto second_label
+            stmnt_vctr.push_back(": "+if_label.back().at(0));      //MC: declaration first_label
+
+        }
+        ; 
+
+bb:	    if_clause statements ENDIF
+        {
+            //declare second_label
+            stmnt_vctr.push_back(": "+if_label.back().at(1));
+            if_label.pop_back();
+        }
+        |if_clause statements ELSE statements ENDIF 
+		{
+           op.clear();
+        }
         ;
 
+while_key:  WHILE
+         {
 
-cc:		WHILE boolean_expr BEGINLOOP statements ENDLOOP 
+         }
+         ;
+while_clause: while_key boolean_expr BEGINLOOP
+            {
+            }
+            ;
+
+cc:		 while_clause statements ENDLOOP 
 		{op.clear();}
-
         ;
 
 dd:		DO BEGINLOOP statements ENDLOOP WHILE boolean_expr 
@@ -139,7 +190,7 @@ dd:		DO BEGINLOOP statements ENDLOOP WHILE boolean_expr
 
         ;
 
-ee:		READ var ii
+ee:		READ posterm ii
         {
             while(!op.empty())
             {
@@ -156,11 +207,11 @@ ee:		READ var ii
         ;
 
 ii:		/*empty*/ 
-		| COMMA var ii 
+		| COMMA posterm ii 
 		
         ;
 
-ff:		WRITE var ii
+ff:		WRITE posterm ii
         {
             while(!op.empty())
             {
@@ -186,29 +237,197 @@ hh:		RETURN expression
 
 boolean_expr:	relation_exprr
 		| boolean_expr OR relation_exprr 
-		;
+		{
+            //|| t[temp_var_num],second_to_last_operand,last_operand_from_vector
+            m.str("");
+            m.clear();                              //clearing string stream for conversion from int to str
+            m<<temp_var_count;                      //feeding int to stringstream
+            temp_var_count++;
+            string new_temp_var='t'+ m.str();       //creating temp variable name
+            sym_table.push_back(new_temp_var);      //adding temporary variable to symbol table
+            sym_type.push_back("INTEGER");          //adding datatype for the temp var to symbol table
+            string op2 = op.back();
+            op.pop_back();
+            string op1 =op.back();
+            op.pop_back();
+            stmnt_vctr.push_back("|| "+ new_temp_var + ", "+op1+", "+op2);    
+            op.push_back(new_temp_var); //pushing new temp variable
+        }
+        ;
 
 relation_exprr:	relation_expr 
 		| relation_exprr AND relation_expr 
-		;
+		{
+            //&& t[temp_var_num],second_to_last_operand,last_operand_from_vector
+            m.str("");
+            m.clear();                              //clearing string stream for conversion from int to str
+            m<<temp_var_count;                      //feeding int to stringstream
+            temp_var_count++;
+            string new_temp_var='t'+ m.str();       //creating temp variable name
+            sym_table.push_back(new_temp_var);      //adding temporary variable to symbol table
+            sym_type.push_back("INTEGER");          //adding datatype for the temp var to symbol table
+            string op2 = op.back();
+            op.pop_back();
+            string op1 =op.back();
+            op.pop_back();
+            stmnt_vctr.push_back("&& "+ new_temp_var + ", "+op1+", "+op2);    
+            op.push_back(new_temp_var); //pushing new temp variable
+        }
+
+        ;
 
 relation_expr:	rexpr
-		| NOT rexpr 
+		| NOT rexpr
+        {
+            //! t[temp_var_num], first_unused_variable_from_stack
+            m.str("");
+            m.clear();                              //clearing string stream for conversion from int to str
+            m<<temp_var_count;                      //feeding int to stringstream
+            temp_var_count++;
+            string new_temp_var='t'+ m.str();       //creating temp variable name
+            sym_table.push_back(new_temp_var);      //adding temporary variable to symbol table
+            sym_type.push_back("INTEGER");          //adding datatype for the temp var to symbol table
+            string op1 = op.back();
+            op.pop_back();                          //removing last variable as it has already been used
+            stmnt_vctr.push_back("! "+new_temp_var+", "+op1);   //equating the the logical NOT of the last variable on the stack
+                                                                //to the new temporary variable that will be added to the stack
+            op.push_back(new_temp_var);
+
+        }
 		;
 
-rexpr:		expression comp expression 
-		| TRUE
-		| FALSE 
+rexpr:	expression EQ expression
+        {
+            //== t[temp_var_num],second_to_last_operand,last_operand_from_vector
+            m.str("");
+            m.clear();                              //clearing string stream for conversion from int to str
+            m<<temp_var_count;                      //feeding int to stringstream
+            temp_var_count++;
+            string new_temp_var='t'+ m.str();       //creating temp variable name
+            sym_table.push_back(new_temp_var);      //adding temporary variable to symbol table
+            sym_type.push_back("INTEGER");          //adding datatype for the temp var to symbol table
+            string op2 = op.back();
+            op.pop_back();
+            string op1 =op.back();
+            op.pop_back();
+            stmnt_vctr.push_back("== "+ new_temp_var + ", "+op1+", "+op2);    
+            op.push_back(new_temp_var); //pushing new temp variable
+        }
+		| expression NEQ expression
+        {
+            //!= t[temp_var_num],second_to_last_operand,last_operand_from_vector
+            m.str("");
+            m.clear();                              //clearing string stream for conversion from int to str
+            m<<temp_var_count;                      //feeding int to stringstream
+            temp_var_count++;
+            string new_temp_var='t'+ m.str();       //creating temp variable name
+            sym_table.push_back(new_temp_var);      //adding temporary variable to symbol table
+            sym_type.push_back("INTEGER");          //adding datatype for the temp var to symbol table
+            string op2 = op.back();
+            op.pop_back();
+            string op1 =op.back();
+            op.pop_back();
+            stmnt_vctr.push_back("!= "+ new_temp_var + ", "+op1+", "+op2);    
+            op.push_back(new_temp_var); //pushing new temp variable
+        }
+
+        | expression LT expression 
+        {
+            //< t[temp_var_num],second_to_last_operand,last_operand_from_vector
+            m.str("");
+            m.clear();                              //clearing string stream for conversion from int to str
+            m<<temp_var_count;                      //feeding int to stringstream
+            temp_var_count++;
+            string new_temp_var='t'+ m.str();       //creating temp variable name
+            sym_table.push_back(new_temp_var);      //adding temporary variable to symbol table
+            sym_type.push_back("INTEGER");          //adding datatype for the temp var to symbol table
+            string op2 = op.back();
+            op.pop_back();
+            string op1 =op.back();
+            op.pop_back();
+            stmnt_vctr.push_back("< "+ new_temp_var + ", "+op1+", "+op2);    
+            op.push_back(new_temp_var); //pushing new temp variable
+        }
+        | expression GT expression 
+        {
+            //> t[temp_var_num],second_to_last_operand,last_operand_from_vector
+            m.str("");
+            m.clear();                              //clearing string stream for conversion from int to str
+            m<<temp_var_count;                      //feeding int to stringstream
+            temp_var_count++;
+            string new_temp_var='t'+ m.str();       //creating temp variable name
+            sym_table.push_back(new_temp_var);      //adding temporary variable to symbol table
+            sym_type.push_back("INTEGER");          //adding datatype for the temp var to symbol table
+            string op2 = op.back();
+            op.pop_back();
+            string op1 =op.back();
+            op.pop_back();
+            stmnt_vctr.push_back("> "+ new_temp_var + ", "+op1+", "+op2);    
+            op.push_back(new_temp_var); //pushing new temp variable
+        }
+        | expression LTE expression 
+        {
+            //<= t[temp_var_num],second_to_last_operand,last_operand_from_vector
+            m.str("");
+            m.clear();                              //clearing string stream for conversion from int to str
+            m<<temp_var_count;                      //feeding int to stringstream
+            temp_var_count++;
+            string new_temp_var='t'+ m.str();       //creating temp variable name
+            sym_table.push_back(new_temp_var);      //adding temporary variable to symbol table
+            sym_type.push_back("INTEGER");          //adding datatype for the temp var to symbol table
+            string op2 = op.back();
+            op.pop_back();
+            string op1 =op.back();
+            op.pop_back();
+            stmnt_vctr.push_back("<= "+ new_temp_var + ", "+op1+", "+op2);    
+            op.push_back(new_temp_var); //pushing new temp variable
+        }
+        | expression GTE expression 
+        {
+            //>= t[temp_var_num],second_to_last_operand,last_operand_from_vector
+            m.str("");
+            m.clear();                              //clearing string stream for conversion from int to str
+            m<<temp_var_count;                      //feeding int to stringstream
+            temp_var_count++;
+            string new_temp_var='t'+ m.str();       //creating temp variable name
+            sym_table.push_back(new_temp_var);      //adding temporary variable to symbol table
+            sym_type.push_back("INTEGER");          //adding datatype for the temp var to symbol table
+            string op2 = op.back();
+            op.pop_back();
+            string op1 =op.back();
+            op.pop_back();
+            stmnt_vctr.push_back(">= "+ new_temp_var + ", "+op1+", "+op2);    
+            op.push_back(new_temp_var); //pushing new temp variable
+        }
+        |TRUE
+        {
+            //= t[temp_var_num], 1 [TRUE]
+            m.str("");
+            m.clear();                              //clearing string stream for conversion from int to str
+            m<<temp_var_count;                      //feeding int to stringstream
+            temp_var_count++;
+            string new_temp_var='t'+ m.str();       //creating temp variable name
+            sym_table.push_back(new_temp_var);      //adding temporary variable to symbol table
+            sym_type.push_back("INTEGER");          //adding datatype for the temp var to symbol table
+            stmnt_vctr.push_back("= "+new_temp_var+", 1"); //adding constant value TRUE via temporary variables on operand stack
+            op.push_back(new_temp_var);
+        }
+		| FALSE
+        {
+            //= t[temp_var_num], 0 [FALSE]
+            m.str("");
+            m.clear();                              //clearing string stream for conversion from int to str
+            m<<temp_var_count;                      //feeding int to stringstream
+            temp_var_count++;
+            string new_temp_var='t'+ m.str();       //creating temp variable name
+            sym_table.push_back(new_temp_var);      //adding temporary variable to symbol table
+            sym_type.push_back("INTEGER");          //adding datatype for the temp var to symbol table
+            stmnt_vctr.push_back("= "+new_temp_var+", 0"); //adding constant value FALSE via temporary variables on operand stack
+            op.push_back(new_temp_var);
+        }
 		| LPAREN boolean_expr RPAREN 
-		
+        ;		
 
-comp:	EQ 
-		| NEQ 
-		| LT 
-		| GT
-		| LTE
-		| GTE 
-		;
 
 expression:	mul_expr expradd
 		;
@@ -228,7 +447,7 @@ expradd:	/*empty*/
             op.pop_back();
             string op1 =op.back();
             op.pop_back();
-            stmnt_vctr.push_back("+ "+ new_temp_var + ","+op1+","+op2);    
+            stmnt_vctr.push_back("+ "+ new_temp_var + ", "+op1+", "+op2);    
             op.push_back(new_temp_var); //pushing new temp variable
 
         }
@@ -246,7 +465,7 @@ expradd:	/*empty*/
             op.pop_back();
             string op1 =op.back();
             op.pop_back();
-            stmnt_vctr.push_back("- "+ new_temp_var + ","+op1+","+op2);    
+            stmnt_vctr.push_back("- "+ new_temp_var + ", "+op1+", "+op2);    
             op.push_back(new_temp_var); //pushing new temp variable
         }
 		;
@@ -269,7 +488,7 @@ multi_term:	/*empty*/
             op.pop_back();
             string op1 =op.back();
             op.pop_back();
-            stmnt_vctr.push_back("* "+ new_temp_var + ","+op1+","+op2);    
+            stmnt_vctr.push_back("* "+ new_temp_var + ", "+op1+", "+op2);    
             op.push_back(new_temp_var); //pushing new temp variable
         }
 		| DIV term multi_term
@@ -286,7 +505,7 @@ multi_term:	/*empty*/
             op.pop_back();
             string op1 =op.back();
             op.pop_back();
-            stmnt_vctr.push_back("/ "+ new_temp_var + ","+op1+","+op2);    
+            stmnt_vctr.push_back("/ "+ new_temp_var + ", "+op1+", "+op2);    
             op.push_back(new_temp_var); //pushing new temp variable
         }
 
@@ -304,7 +523,7 @@ multi_term:	/*empty*/
             op.pop_back();
             string op1 =op.back();
             op.pop_back();
-            stmnt_vctr.push_back("% "+ new_temp_var + ","+op1+","+op2);    
+            stmnt_vctr.push_back("% "+ new_temp_var + ", "+op1+", "+op2);    
             op.push_back(new_temp_var); //pushing new temp variable
         }
 
@@ -325,7 +544,7 @@ term:           posterm
                     string new_temp_var='t'+ m.str();       //creating temp variable name
                     sym_table.push_back(new_temp_var);      //adding temporary variable to symbol table
                     sym_type.push_back("INTEGER");          //adding datatype for the temp var to symbol table 
-                    stmnt_vctr.push_back("- "+ new_temp_var + ",0," +op.back());    
+                    stmnt_vctr.push_back("- "+ new_temp_var + ", 0, " +op.back());    
                     op.pop_back();  //removing the old variable and replacing with new temp variable 
                     op.push_back(new_temp_var); //pushing new temp variable
 
@@ -348,9 +567,9 @@ posterm:        var                 //THIS ENTIRE STEP  IS NOT REDUNDANT__IT IS 
                     sym_type.push_back("INTEGER");          //adding datatype for the temp var to symbol table 
                     string op1=op.back();       
                     if(op1.at(0)=='[')                  //Copy Statement for array elements
-                        stmnt_vctr.push_back("=[] "+new_temp_var+","+op1.substr(3,op1.length()-3));
+                        stmnt_vctr.push_back("=[] "+new_temp_var+", "+op1.substr(3,op1.length()-3));
                     else                                    //Copy statement for normal variables
-                        stmnt_vctr.push_back("= "+ new_temp_var+","+op.back());    
+                        stmnt_vctr.push_back("= "+ new_temp_var+", "+op.back());    
                     op.pop_back();  //removing the old variable and replacing with new temp variable 
                     op.push_back(new_temp_var); //pushing new temp variable
                 }
@@ -367,7 +586,7 @@ posterm:        var                 //THIS ENTIRE STEP  IS NOT REDUNDANT__IT IS 
                     sym_type.push_back("INTEGER");          //adding datatype for the temp var to symbol table
                     stringstream ss;
                     ss << $1;
-                    stmnt_vctr.push_back("= "+ new_temp_var +","+ ss.str());
+                    stmnt_vctr.push_back("= "+ new_temp_var +", "+ ss.str());
                     op.push_back(new_temp_var);
                 }
                 | LPAREN expression RPAREN
