@@ -216,9 +216,33 @@ cc:		 while_clause statements ENDLOOP
         }
         ;
 
-dd:		DO BEGINLOOP statements ENDLOOP WHILE boolean_expr 
-		{op.clear();}
-
+do_key: DO BEGINLOOP
+        {                   //sounds like 'dookie'....geddit?
+             //MACHINE LANGUAGE CODE FOR DO-WHILE STATEMENT
+            /* :do_while_loop_[NUM]
+                =:conditional_false_[NUM]
+                :conditional_true_[NUM]
+                ## Statements
+                ?= test_codition_temp_variable, conditonal_true_[NUM]
+            */
+            label_count++;     //Generating two discrete labels for this if statement
+            m.str("");
+            m.clear();      //clearing the stringstream buffer
+            m<<label_count;
+            string label_1 = "do_while_loop_"+m.str();  //creating loop label
+            vector <string> temp;
+            temp.push_back(label_1);
+            loop_label.push_back(temp);
+            stmnt_vctr.push_back(": "+label_1);
+        }
+        ;
+dd:	     do_key statements ENDLOOP WHILE boolean_expr 
+		{
+            stmnt_vctr.push_back("?:= "+loop_label.back().at(0));
+            //if condition is false just continue the program execution
+            //the single execution before condition check satisfies do while 
+            //statment's requirement
+        }
         ;
 
 ee:		READ posterm ii

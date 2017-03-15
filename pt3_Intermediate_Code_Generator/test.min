@@ -13,13 +13,13 @@ beginbody
     a:=10;
     i:=0;
     j:=0;
-    while i<a 
+    do 
+    beginloop
+        do
         beginloop
-            while j<a
-                beginloop
-                    write n;
-                    j:=j+1;
-                endloop;
-            i:=i+1;
-        endloop;
+                write n;
+                j:=j+1;
+        endloop while j<a;
+        i:=i+1;
+    endloop while i<a;
 endbody
