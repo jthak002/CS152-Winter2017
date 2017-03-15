@@ -11,7 +11,8 @@ vector <string> stmnt_vctr; //Stores the statements in machine language
 string temp_string;         //temporary variable
 int temp_var_count;         //keeps a count on the number of temporary variables used
 int label_count;            //keeps track of the next label number
-vector <vector <string> > if_label; //storing 2 labels for 
+vector <vector <string> > if_label; //storing 2 labels for if statement and 3 labels for else statement
+vector <vector <string> > loop_label;
 stringstream m;             //Used for conversion from int to string --> can be cleared by
                             //m.str("")[to clear the string buffer; m.clear()[to clear the parameters and errors
 %}
@@ -150,7 +151,7 @@ if_clause:		IF boolean_expr THEN
             temp.push_back(label_1);    //pushing first label onto temp label vectr
             temp.push_back(label_2);    //pushing second label onto temp vector
             if_label.push_back(temp);   //pushing temp vector onto if label
-            stmnt_vctr.push_back("?= "+op.back()+", "+if_label.back().at(0));
+            stmnt_vctr.push_back("?:= "+op.back()+", "+if_label.back().at(0));
                                         //MC: evaluate if condition and goto first_label
             op.pop_back();
             stmnt_vctr.push_back(":= "+if_label.back().at(1));  //MC: goto second_label
@@ -173,16 +174,46 @@ bb:	    if_clause statements ENDIF
 
 while_key:  WHILE
          {
-
+            //MACHINE LANGUAGE CODE FOR WHILE STATEMENT
+            /* :while_loop_[NUM]
+                //conditional statements
+                ?= test_codition_temp_variable, conditonal_true_[NUM]
+                =:conditional_false_[NUM]
+                :conditional_true_[NUM]
+                ## Statements
+                =: while_loop_[NUM]
+                :conditional_false[NUM]
+            */
+            label_count++;     //Generating two discrete labels for this if statement
+            m.str("");
+            m.clear();      //clearing the stringstream buffer
+            m<<label_count;
+            string label_1 = "while_loop_"+m.str();  //creating loop label
+            string label_2 = "conditional_true_"+m.str();  //creating entry label
+            string label_3 = "conditional_false_"+m.str();  //creating exit label
+            vector<string> temp;        //temp label vector
+            temp.push_back(label_1);    //pushing first label onto temp label vectr
+            temp.push_back(label_2);    //pushing second label onto temp vector
+            temp.push_back(label_3);    //pushing third label onto temp vector
+            loop_label.push_back(temp);   //pushing temp vector onto if label
+            stmnt_vctr.push_back(": "+loop_label.back().at(0));      //MC: declaration loop_label
          }
          ;
 while_clause: while_key boolean_expr BEGINLOOP
             {
+                stmnt_vctr.push_back("?:= "+op.back()+", "+loop_label.back().at(1));
+                op.pop_back();
+                stmnt_vctr.push_back(":= "+loop_label.back().at(2));
+                stmnt_vctr.push_back(": "+loop_label.back().at(1));
             }
             ;
 
 cc:		 while_clause statements ENDLOOP 
-		{op.clear();}
+		{
+            stmnt_vctr.push_back(":= "+loop_label.back().at(0));
+            stmnt_vctr.push_back(": "+loop_label.back().at(2));
+            loop_label.pop_back();
+        }
         ;
 
 dd:		DO BEGINLOOP statements ENDLOOP WHILE boolean_expr 

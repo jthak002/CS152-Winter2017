@@ -9,15 +9,17 @@ a : integer;
 i, j : integer;
 endlocals
 beginbody
-    n:=2;
-    a:=1;
-    write a,n;
-    if a < n then
-        a:=n;
-        if i<j then
-            a:=n;
-        endif;
-        write i,j;
-    endif;
-    write a,n;
+    n:=1;
+    a:=10;
+    i:=0;
+    j:=0;
+    while i<a 
+        beginloop
+            while j<a
+                beginloop
+                    write n;
+                    j:=j+1;
+                endloop;
+            i:=i+1;
+        endloop;
 endbody
