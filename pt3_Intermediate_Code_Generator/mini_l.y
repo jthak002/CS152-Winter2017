@@ -149,15 +149,13 @@ if_clause:		IF boolean_expr THEN
             m.str("");
             m.clear();      //clearing the stringstream buffer
             m<<label_count;
-            string label_1 = "label_"+m.str();  //creating label1
-            label_count++;
-            m.str("");
-            m.clear();      //clearing the string stream buffer
-            m<<label_count; 
-            string label_2 = "label_"+m.str();  //creating label2
+            string label_1 = "if_condition_true_"+m.str();  //creating label1
+            string label_2 = "if_condition_false_"+m.str(); //creating label2
+            string label_3 = "end_if_"+m.str();   //creating label3
             vector<string> temp;        //temp label vector
             temp.push_back(label_1);    //pushing first label onto temp label vectr
             temp.push_back(label_2);    //pushing second label onto temp vector
+            temp.push_back(label_3);
             if_label.push_back(temp);   //pushing temp vector onto if label
             stmnt_vctr.push_back("?:= "+if_label.back().at(0)+", "+op.back());
                                         //MC: evaluate if condition and goto first_label
@@ -166,7 +164,23 @@ if_clause:		IF boolean_expr THEN
             stmnt_vctr.push_back(": "+if_label.back().at(0));      //MC: declaration first_label
 
         }
-        ; 
+        ;
+
+else_if:    if_clause statements ELSE
+            {
+                /* Structure of IF-ELSE LOOP:
+                    ?= if_condition_true_[NUM]
+                    =: if_condition_false_[NUM]
+                    //statements
+                    =:end_if_[NUM]
+                    :if_condition_false_[NUM]
+                    //statements
+                    :end_if_[NUM]
+                */
+                stmnt_vctr.push_back(":= "+if_label.back().at(2));
+                stmnt_vctr.push_back(": "+if_label.back().at(1));
+            }
+            ;
 
 bb:	    if_clause statements ENDIF
         {
@@ -174,9 +188,10 @@ bb:	    if_clause statements ENDIF
             stmnt_vctr.push_back(": "+if_label.back().at(1));
             if_label.pop_back();
         }
-        |if_clause statements ELSE statements ENDIF 
+        |else_if statements ENDIF 
 		{
-           op.clear();
+           stmnt_vctr.push_back(": "+if_label.back().at(2));
+           if_label.pop_back();             //END_LOOP_HERE
         }
         ;
 

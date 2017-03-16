@@ -10,12 +10,13 @@ i :integer;
 j : integer;
 endlocals
 beginbody
-i:=10;
-    do
-    beginloop
-        write i;
-        j:=j+1;
-        write j;
-    endloop while j<10;
+i:=9;
+n:=0;
+j:=1;
 
+    if i%2==0 then
+        write j;
+    else
+        write n;
+    endif;
 endbody
