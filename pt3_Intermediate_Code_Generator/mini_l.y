@@ -2,6 +2,8 @@
 #include "heading.h"
 int yyerror (char* s);
 int yylex (void);
+bool in_sym_table(string);
+bool in_arr_table(string);
 vector <string> func_table; //Stores the names of functions for the function lookup table
 vector <string> sym_table;  //Stores the name of the symbols for the symbol table
 vector <string> sym_type;   //Stores the data type of the variables denoted by the symbols 
@@ -52,7 +54,7 @@ function:	FUNCTION IDENTIFIERS SEMICOLON BEGINPARAMS declarations ENDPARAMS BEGI
 				if(sym_type.at(j)=="INTEGER")
 					cout<<". "<<sym_table.at(j)<<endl;
 				else
-					cout<<".[] "<<sym_table.at(j)<<","<<sym_type.at(j)<<endl;
+					cout<<".[] "<<sym_table.at(j)<<", "<<sym_type.at(j)<<endl;
 			}
             //STATEMENT PRINT
             for(unsigned i=0;i<stmnt_vctr.size();i++)
@@ -112,13 +114,19 @@ statement:  aa
             ;
 aa:		IDENTIFIERS ASSIGN expression
         {
-            stmnt_vctr.push_back("= _" + *($1) + ", " + op.back() );
+            string var = "_"+*($1);
+            if (!in_sym_table(var))
+                exit(0);
+            stmnt_vctr.push_back("= " + var + ", " + op.back() );
             op.pop_back();
             //cout<<op.size()<<endl;    TEST
             //op.clear()  //REMOVE AFTER TESTING
         }
         | IDENTIFIERS LSQUARE expression RSQUARE ASSIGN expression
         {
+            string var = "_"+*($1);
+            if (!in_arr_table(var))
+                exit(0);
             string array_result_expression = op.back();
             op.pop_back();
             string array_expression = op.back();
@@ -151,7 +159,7 @@ if_clause:		IF boolean_expr THEN
             temp.push_back(label_1);    //pushing first label onto temp label vectr
             temp.push_back(label_2);    //pushing second label onto temp vector
             if_label.push_back(temp);   //pushing temp vector onto if label
-            stmnt_vctr.push_back("?:= "+op.back()+", "+if_label.back().at(0));
+            stmnt_vctr.push_back("?:= "+if_label.back().at(0)+", "+op.back());
                                         //MC: evaluate if condition and goto first_label
             op.pop_back();
             stmnt_vctr.push_back(":= "+if_label.back().at(1));  //MC: goto second_label
@@ -201,7 +209,7 @@ while_key:  WHILE
          ;
 while_clause: while_key boolean_expr BEGINLOOP
             {
-                stmnt_vctr.push_back("?:= "+op.back()+", "+loop_label.back().at(1));
+                stmnt_vctr.push_back("?:= "+loop_label.back().at(1)+", "+op.back());
                 op.pop_back();
                 stmnt_vctr.push_back(":= "+loop_label.back().at(2));
                 stmnt_vctr.push_back(": "+loop_label.back().at(1));
@@ -238,28 +246,41 @@ do_key: DO BEGINLOOP
         ;
 dd:	     do_key statements ENDLOOP WHILE boolean_expr 
 		{
-            stmnt_vctr.push_back("?:= "+loop_label.back().at(0));
+            stmnt_vctr.push_back("?:= "+ loop_label.back().at(0)+", "+op.back());
             //if condition is false just continue the program execution
             //the single execution before condition check satisfies do while 
             //statment's requirement
+            op.pop_back();
+            loop_label.pop_back();
         }
         ;
 
-ee:		READ posterm ii
-        {
-            while(!op.empty())
-            {
-          		string s= op.front();
-                op.erase(op.begin());
-                // insert symbol table checking here
-                stmnt_vctr.push_back(".< "+ s);
-                //read statements in machine language
-            }
-            op.clear();
+ee:		READ IDENTIFIERS                //!!---IMPORTANT----!!
+        {                               //READ cannnot process multiple variables. only one variable at a time
+            string var = "_"+*($2);
+            if (!in_sym_table(var))
+                exit(0);
+            stmnt_vctr.push_back(".< _"+*($2));
         }
-	    
- 	
-        ;
+        |READ IDENTIFIERS LSQUARE expression RSQUARE
+        {
+            //First equating the input to a temporary variable
+            //then assigning the input to the element in the array
+            string var = "_"+*($2);
+            if (!in_arr_table(var))
+                exit(0);
+            m.str("");
+            m.clear();                              //clearing string stream for conversion from int to str
+            m<<temp_var_count;                      //feeding int to stringstream
+            temp_var_count++;                       
+            string new_temp_var='t'+ m.str();       //creating temp variable name
+            sym_table.push_back(new_temp_var);      //adding temporary variable to symbol table
+            sym_type.push_back("INTEGER");          //adding datatype for the temp var to symbol table
+            stmnt_vctr.push_back(".< "+new_temp_var);
+            stmnt_vctr.push_back("[]= _"+*($2)+", "+op.back()+", "+new_temp_var);
+            op.pop_back();
+        }
+	    ;
 
 ii:		/*empty*/ 
 		| COMMA posterm ii 
@@ -281,7 +302,12 @@ ff:		WRITE posterm ii
 		;
 
 gg:		CONTINUE 
-        {op.clear();}
+        {
+            //Just transfer control back to the head of the most recent while loop
+            //:= while_loop_[NUM]
+            if (!loop_label.empty())
+                stmnt_vctr.push_back(":= "+ loop_label.back().at(0));
+        }
 		;
 
 hh:		RETURN expression
@@ -657,13 +683,19 @@ term_ex:        expression
 
 var:            IDENTIFIERS
                 {
-                    op.push_back("_"+*($1));
+                    string var = "_"+*($1);
+                    if (!in_sym_table(var))
+                        exit(0);
+                    op.push_back(var);
                 }
                 | IDENTIFIERS LSQUARE expression RSQUARE
                 {
                     string op1 = op.back();
                     op.pop_back();
-                    op.push_back("[] _" + *($1) + ", " + op1);
+                    string var = "_"+*($1);
+                    if (!in_arr_table(var))
+                        exit(0);
+                    op.push_back("[] " + var + ", " + op1);
                 }
                 ;
 %%
@@ -682,5 +714,50 @@ int yyerror(string s)
 int yyerror(char *s)
 {
   return yyerror(string(s));
+}
+
+//FUNCTION CHECKS IF THE INTEGER VARIABLE USED HAS BEEN DECLARED FIRST
+bool in_sym_table(string var)
+{
+    extern int row, column;
+    for(unsigned int i=0;i<sym_table.size();i++)
+    {
+        if(sym_table.at(i)==var)
+        {
+            if(sym_type.at(i)=="INTEGER")
+            {
+                return true;
+            }
+            else
+            {
+                cout << "SEMANTIC Error at line "<<row<<", column "<<column<<" : Incompatible Datatype - \""<<var.substr(1,var.length()-1)<<"\" is an ARRAY."<<endl; 
+                return false;
+            }
+        }
+    }
+    cerr << "SEMANTIC Error at line "<<row<<", column "<<column<<" : Undeclared \""<<var.substr(1,var.length()-1)<<"\" Used."<<endl; 
+    return false;
+}
+//FUNCTION CHECKS IF THE ARRAY VARIABLE USED HAS BEEN DECLARED FIRST AND IS IN FACT AN ARRAY
+bool in_arr_table(string var)
+{
+    extern int row, column;
+    for(unsigned int i=0;i<sym_table.size();i++)
+    {
+        if(sym_table.at(i)==var)
+        {
+            if(sym_type.at(i)=="INTEGER")
+            {
+                cout << "SEMANTIC Error at line "<<row<<", column "<<column<<" : Incompatible Datatype - \""<<var.substr(1,var.length()-1)<<"\" is an INTEGER."<<endl; 
+                return false;
+            }
+            else
+            {
+                return true;
+            }
+        }
+    }
+    cerr << "SEMANTIC Error at line "<<row<<", column "<<column<<" : Undeclared \""<<var.substr(1,var.length()-1)<<"\" Used."<<endl; 
+    return false;
 }
 

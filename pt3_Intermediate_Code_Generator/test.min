@@ -5,21 +5,17 @@ endparams
 
 beginlocals
 n : integer;
-a : integer;
-i, j : integer;
+a : array [10] of integer;
+i :integer;
+j : integer;
 endlocals
 beginbody
-    n:=1;
-    a:=10;
-    i:=0;
-    j:=0;
-    do 
+i:=10;
+    do
     beginloop
-        do
-        beginloop
-                write n;
-                j:=j+1;
-        endloop while j<a;
-        i:=i+1;
-    endloop while i<a;
+        write i;
+        j:=j+1;
+        write j;
+    endloop while j<10;
+
 endbody

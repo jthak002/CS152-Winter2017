@@ -14,7 +14,8 @@ endlocals
 
 beginbody	## main program
 
-  read i, j;
+  read i; 
+  read j;
 
   k := 0;
   n := 20;
