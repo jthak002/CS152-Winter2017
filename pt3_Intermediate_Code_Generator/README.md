@@ -1,12 +1,16 @@
 **Requirements**
-FOR COMPILATION - well.cs.ucr.edu
-                - OR -
-                - gcc version 4.1.2 20080704 (Red Hat 4.1.2-55)
-                - flex version 2.5.4
-                - bison (GNU) version 2.3
-FOR EXECUTION   - bolt.cs.ucr.edu
-                - OR -
-                - gcc version 4.8.5 20150623 (Red Hat 4.8.5-11) (GCC)  
+
+FOR COMPILATION 
+- well.cs.ucr.edu
+    - OR -
+- gcc version 4.1.2 20080704 (Red Hat 4.1.2-55)
+- flex version 2.5.4
+- bison (GNU) version 2.3
+
+FOR EXECUTION   
+- bolt.cs.ucr.edu
+    - OR -
+- gcc version 4.8.5 20150623 (Red Hat 4.8.5-11) (GCC)  
 
 **Examples**
 There are couple of example code files included in this repo. They can be used to make compiler parser work.  
