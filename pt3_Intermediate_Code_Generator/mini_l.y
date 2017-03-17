@@ -1,9 +1,10 @@
 %{
 #include "heading.h"
-int yyerror (char* s);
+int yyerror (char* s);          //FUNCTIONS DEFINED AT THE END OF MINI_L.Y
 int yylex (void);
-bool in_sym_table(string);
-bool in_arr_table(string);
+bool in_sym_table(string);      //SEMANTIC CHECKER: VARIABLE
+bool in_arr_table(string);      //SEMANTIC CHECKER: ARRAY
+bool in_func_table(string);     //SEMANTIC CHECKER: FUNCTION
 int param_val=0;
 bool add_to_param_table=false; 
 vector <string> param_table;
@@ -48,6 +49,12 @@ functions:	/*empty*/
 		| function functions
 		
 		;
+function_name: FUNCTION IDENTIFIERS
+             {
+                func_table.push_back(*($2));
+                cout <<"func "<<*($2)<<endl;
+             }
+             ;
 beginparam: BEGINPARAMS
           {
               add_to_param_table=true;
@@ -58,10 +65,10 @@ endparam:   ENDPARAMS
             add_to_param_table=false;
         }
         ;
-function:	FUNCTION IDENTIFIERS SEMICOLON beginparam declarations endparam BEGINLOCALS declarations ENDLOCALS BEGINBODY statements ENDBODY 
+function:	function_name SEMICOLON beginparam declarations endparam BEGINLOCALS declarations ENDLOCALS BEGINBODY statements ENDBODY 
 		{
-			func_table.push_back(*($2));
-            cout <<"func "<<*($2)<<endl;
+			//func_table.push_back(*($2));
+            //cout <<"func "<<*($2)<<endl;
             //VARIABLE AND PARAMETER DECLARATIONS
 			for(unsigned int j=0;j<sym_table.size();j++)
 			{
@@ -716,7 +723,9 @@ term:           posterm
                     temp_var_count++;
                     string new_temp_var='t'+ m.str();       //creating temp variable name
                     sym_table.push_back(new_temp_var);      //adding temporary variable to symbol table
-                    sym_type.push_back("INTEGER");          //adding datatype for the temp var to symbol table 
+                    sym_type.push_back("INTEGER");          //adding datatype for the temp var to symbol table
+                    if(!in_func_table(*($1)))
+                        exit(0);
                     stmnt_vctr.push_back("call " + *($1) + ", " + new_temp_var);
                     op.push_back(new_temp_var); 
                 }
@@ -868,4 +877,13 @@ bool in_arr_table(string var)
     cerr << "SEMANTIC Error at line "<<row<<", column "<<column<<" : Undeclared \""<<var.substr(1,var.length()-1)<<"\" Used."<<endl; 
     return false;
 }
+bool in_func_table(string var)
+{
+    extern  int row,column;
+    for(unsigned int i=0;i<func_table.size();i++)
+        if(func_table.at(i)==var)
+            return true;
+    cerr << "SEMANTIC Error at line "<<row<<", column "<<column<<" : Undeclared Function \""<<var<<"\" Called."<<endl; 
+    return false;
 
+}
