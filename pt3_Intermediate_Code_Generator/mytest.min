@@ -12,7 +12,7 @@ endlocals
 
 beginbody   ## main program
 
-  read i,j;
+  read i, j;
 
   k := 0;
   n := 20;
@@ -28,7 +28,6 @@ beginbody   ## main program
     endloop
   while k < n;
 
-  write i,j,n;
   if i<j and j < n and i>=0 then
      t[i] := i * 2;
      t[j] := j * 2;

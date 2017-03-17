@@ -284,13 +284,21 @@ do_key: DO BEGINLOOP
             m.clear();      //clearing the stringstream buffer
             m<<label_count;
             string label_1 = "do_while_loop_"+m.str();  //creating loop label
+            string label_2 = "do_while_conditional_check"+m.str();
             vector <string> temp;
             temp.push_back(label_1);
+            temp.push_back(label_2);
             loop_label.push_back(temp);
             stmnt_vctr.push_back(": "+label_1);
         }
         ;
-dd:	     do_key statements ENDLOOP WHILE boolean_expr 
+
+do_check: do_key statements ENDLOOP
+        {
+            //Statements for continue statement
+            stmnt_vctr.push_back(": "+ loop_label.back().at(1));
+        }
+dd:	     do_check WHILE boolean_expr 
 		{
             stmnt_vctr.push_back("?:= "+ loop_label.back().at(0)+", "+op.back());
             //if condition is false just continue the program execution
@@ -389,7 +397,12 @@ gg:		CONTINUE
             //Just transfer control back to the head of the most recent while loop
             //:= while_loop_[NUM]
             if (!loop_label.empty())
-                stmnt_vctr.push_back(":= "+ loop_label.back().at(0));
+            {
+                if(loop_label.back().at(0).at(0)=='d')
+                    stmnt_vctr.push_back(":= "+ loop_label.back().at(1)); 
+                else
+                    stmnt_vctr.push_back(":= "+ loop_label.back().at(0));
+            }
         }
 		;
 
