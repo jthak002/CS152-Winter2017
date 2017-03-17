@@ -1,6 +1,7 @@
 function main;
 beginparams
 k   :   integer;
+l :     integer;
 endparams
 
 beginlocals
@@ -10,6 +11,7 @@ i :integer;
 j : integer;
 endlocals
 beginbody
+read i,j,k;
 i:=9;
 n:=0;
 j:=1;
@@ -19,4 +21,5 @@ j:=1;
     else
         write n;
     endif;
+ return main(1,2) + main(3,4);
 endbody

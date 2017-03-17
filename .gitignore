@@ -25,6 +25,7 @@ mini_l.output
 mini_l.tab.c
 mini_l.tab.h
 tok.h
+*.mil
 #DESKTOP CONFIG FILES#
 ######################
 desktop.ini

@@ -4,6 +4,9 @@ int yyerror (char* s);
 int yylex (void);
 bool in_sym_table(string);
 bool in_arr_table(string);
+int param_val=0;
+bool add_to_param_table=false; 
+vector <string> param_table;
 vector <string> func_table; //Stores the names of functions for the function lookup table
 vector <string> sym_table;  //Stores the name of the symbols for the symbol table
 vector <string> sym_type;   //Stores the data type of the variables denoted by the symbols 
@@ -14,7 +17,9 @@ string temp_string;         //temporary variable
 int temp_var_count;         //keeps a count on the number of temporary variables used
 int label_count;            //keeps track of the next label number
 vector <vector <string> > if_label; //storing 2 labels for if statement and 3 labels for else statement
-vector <vector <string> > loop_label;
+vector <vector <string> > loop_label;   //stores the labels for loop statements
+stack <string> param_queue; //stack to store the parameters for function calls
+stack <string> read_queue;  //stack to store the correct sequence of read statements with multiple variables
 stringstream m;             //Used for conversion from int to string --> can be cleared by
                             //m.str("")[to clear the string buffer; m.clear()[to clear the parameters and errors
 %}
@@ -43,8 +48,17 @@ functions:	/*empty*/
 		| function functions
 		
 		;
-
-function:	FUNCTION IDENTIFIERS SEMICOLON BEGINPARAMS declarations ENDPARAMS BEGINLOCALS declarations ENDLOCALS BEGINBODY statements ENDBODY 
+beginparam: BEGINPARAMS
+          {
+              add_to_param_table=true;
+          }
+          ;
+endparam:   ENDPARAMS
+        {
+            add_to_param_table=false;
+        }
+        ;
+function:	FUNCTION IDENTIFIERS SEMICOLON beginparam declarations endparam BEGINLOCALS declarations ENDLOCALS BEGINBODY statements ENDBODY 
 		{
 			func_table.push_back(*($2));
             cout <<"func "<<*($2)<<endl;
@@ -56,6 +70,12 @@ function:	FUNCTION IDENTIFIERS SEMICOLON BEGINPARAMS declarations ENDPARAMS BEGI
 				else
 					cout<<".[] "<<sym_table.at(j)<<", "<<sym_type.at(j)<<endl;
 			}
+            while(!param_table.empty())
+            {
+                cout<<"= "<<param_table.front()<<", $"<<param_val<<endl;
+                param_table.erase(param_table.begin());
+                param_val++;
+            }
             //STATEMENT PRINT
             for(unsigned i=0;i<stmnt_vctr.size();i++)
                 cout<<stmnt_vctr.at(i)<<endl;
@@ -63,6 +83,8 @@ function:	FUNCTION IDENTIFIERS SEMICOLON BEGINPARAMS declarations ENDPARAMS BEGI
             stmnt_vctr.clear();
             sym_table.clear();
             sym_type.clear();
+            param_table.clear();
+            param_val=0;
 
 		}
 		; 
@@ -78,6 +100,8 @@ declaration:	id COLON assign
 id:		IDENTIFIERS 
 		{
 			sym_table.push_back("_"+*($1));
+            if(add_to_param_table)
+                param_table.push_back("_"+*($1));
 		}
 		| IDENTIFIERS COMMA id 
 		{
@@ -240,7 +264,7 @@ cc:		 while_clause statements ENDLOOP
         ;
 
 do_key: DO BEGINLOOP
-        {                   //sounds like 'dookie'....geddit?
+      {
              //MACHINE LANGUAGE CODE FOR DO-WHILE STATEMENT
             /* :do_while_loop_[NUM]
                 =:conditional_false_[NUM]
@@ -270,14 +294,46 @@ dd:	     do_key statements ENDLOOP WHILE boolean_expr
         }
         ;
 
-ee:		READ IDENTIFIERS                //!!---IMPORTANT----!!
-        {                               //READ cannnot process multiple variables. only one variable at a time
-            string var = "_"+*($2);
+read_mult:  COMMA IDENTIFIERS read_mult
+            {
+                string var = "_"+*($2);
+                if (!in_sym_table(var))
+                    exit(0);
+                read_queue.push(".< _"+*($2));
+
+            }
+            | COMMA IDENTIFIERS LSQUARE expression RSQUARE read_mult
+            {
+                string var = "_"+*($2);
+                if (!in_arr_table(var))
+                    exit(0);
+                m.str("");
+                m.clear();                              //clearing string stream for conversion from int to str
+                m<<temp_var_count;                      //feeding int to stringstream
+                temp_var_count++;                       
+                string new_temp_var='t'+ m.str();       //creating temp variable name
+                sym_table.push_back(new_temp_var);      //adding temporary variable to symbol table
+                sym_type.push_back("INTEGER");          //adding datatype for the temp var to symbol table
+                read_queue.push(".< "+new_temp_var);
+                read_queue.push("[]= _"+*($2)+", "+op.back()+", "+new_temp_var);
+                op.pop_back();
+            }
+            | /*empty*/
+            ;
+                                                    
+ee:		READ IDENTIFIERS read_mult               //!!---IMPORTANT----!! PREVIOUS VERSION did not support multiple reads in single line
+        {                                       //The new version supports multiple reads
+            string var = "_"+*($2);            
             if (!in_sym_table(var))
                 exit(0);
             stmnt_vctr.push_back(".< _"+*($2));
+            while(!read_queue.empty())
+            {
+                stmnt_vctr.push_back(read_queue.top());
+                read_queue.pop();
+            }
         }
-        |READ IDENTIFIERS LSQUARE expression RSQUARE
+        |READ IDENTIFIERS LSQUARE expression RSQUARE read_mult
         {
             //First equating the input to a temporary variable
             //then assigning the input to the element in the array
@@ -294,6 +350,11 @@ ee:		READ IDENTIFIERS                //!!---IMPORTANT----!!
             stmnt_vctr.push_back(".< "+new_temp_var);
             stmnt_vctr.push_back("[]= _"+*($2)+", "+op.back()+", "+new_temp_var);
             op.pop_back();
+            while(!read_queue.empty())
+            {
+                stmnt_vctr.push_back(read_queue.top());
+                read_queue.pop();
+            }
         }
 	    ;
 
@@ -327,7 +388,8 @@ gg:		CONTINUE
 
 hh:		RETURN expression
         {
-            op.clear();
+            stmnt_vctr.push_back("ret "+op.back());
+            op.pop_back();
         }
 		;
 
@@ -645,7 +707,19 @@ term:           posterm
                     op.push_back(new_temp_var); //pushing new temp variable
 
                 }
-                | IDENTIFIERS term_iden 
+                | IDENTIFIERS term_iden
+                {
+                    //calling functions
+                    m.str("");
+                    m.clear();                       //clearing string stream for conversion from int to str
+                    m<<temp_var_count;                  //feeding int to stringstream
+                    temp_var_count++;
+                    string new_temp_var='t'+ m.str();       //creating temp variable name
+                    sym_table.push_back(new_temp_var);      //adding temporary variable to symbol table
+                    sym_type.push_back("INTEGER");          //adding datatype for the temp var to symbol table 
+                    stmnt_vctr.push_back("call " + *($1) + ", " + new_temp_var);
+                    op.push_back(new_temp_var); 
+                }
                 ;
 
 posterm:        var                 //THIS ENTIRE STEP  IS NOT REDUNDANT__IT IS ABSOLUTELY NECESSARY TO MAINTAIN THE 3 ADDRESS MODE
@@ -688,12 +762,31 @@ posterm:        var                 //THIS ENTIRE STEP  IS NOT REDUNDANT__IT IS 
                 | LPAREN expression RPAREN
                 ;
 
-term_iden:      LPAREN term_ex RPAREN 
-                | LPAREN RPAREN 
+term_iden:      LPAREN term_ex RPAREN
+                {
+                    //add parameters to the queue
+                    while(!param_queue.empty())
+                    {
+                        stmnt_vctr.push_back("param "+param_queue.top());
+                        param_queue.pop();
+                    }
+                }
+                | LPAREN RPAREN
+                {
+                    //leave parameter queue empty
+                }
                 ;
 
-term_ex:        expression 
-                | expression COMMA term_ex 
+term_ex:        expression
+                {
+                    param_queue.push(op.back());
+                    op.pop_back();
+                }
+                | expression COMMA term_ex
+                {
+                    param_queue.push(op.back());
+                    op.pop_back();
+                }
                 ;
 
 var:            IDENTIFIERS
