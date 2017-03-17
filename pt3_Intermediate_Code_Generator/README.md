@@ -12,7 +12,7 @@ The code can be run by following the sequence of commands:
 
 **Known Bugs**
 
- 1. Cannot read multiple input items from the same line
+ 1. [FIXED]~~Cannot read multiple input items from the same line~~
  2. Function lookups not implemented
 
 **Features Added in Last Commit**
@@ -20,4 +20,4 @@ The code can be run by following the sequence of commands:
  - Added function to check for proper declaration of variables before use.
  - Added Do-While loops
  - Fixed While loop-label naming conventions 
-
+ - Can read multiple items in a single read statement 
