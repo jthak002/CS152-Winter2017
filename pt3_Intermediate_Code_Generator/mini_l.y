@@ -1,7 +1,7 @@
 %{
 #include "heading.h"
+int yylex();
 int yyerror (char* s);          //FUNCTIONS DEFINED AT THE END OF MINI_L.Y
-int yylex (void);
 bool in_sym_table(string);      //SEMANTIC CHECKER: VARIABLE
 bool in_arr_table(string);      //SEMANTIC CHECKER: ARRAY
 bool in_func_table(string);     //SEMANTIC CHECKER: FUNCTION
