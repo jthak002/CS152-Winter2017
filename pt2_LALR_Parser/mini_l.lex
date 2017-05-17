@@ -2,7 +2,6 @@
 #include "heading.h"
 #include "tok.h"
 int yyerror(char *s);
-int yylineno = 1;
 %}
 
 	int row = 1;
